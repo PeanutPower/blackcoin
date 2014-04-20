@@ -51,8 +51,10 @@ static const int fHaveUPnP = false;
 static const uint256 hashGenesisBlock("0x000001faef25dec4fbcf906e6242621df2c183bf232f263d0ba5b101911e4563");
 static const uint256 hashGenesisBlockTestNet("0x0000724595fb3b9609d441cbfb9577615c292abf07d996d3edabc48de843642d");
 
-inline int64_t PastDrift(int64_t nTime)   { return nTime - 10 * 60; } // up to 10 minutes from the past
-inline int64_t FutureDrift(int64_t nTime) { return nTime + 10 * 60; } // up to 10 minutes from the future
+inline bool IsProtocolV2(int nHeight) { return nHeight > 1440; }
+
+inline int64_t PastDrift(int64_t nTime, int nHeight)   { return IsProtocolV2(nHeight) ? nTime      : nTime - 10 * 60; }
+inline int64_t FutureDrift(int64_t nTime, int nHeight) { return IsProtocolV2(nHeight) ? nTime + 15 : nTime + 10 * 60; }
 
 extern libzerocoin::Params* ZCParams;
 extern CScript COINBASE_FLAGS;
@@ -1243,7 +1245,10 @@ public:
 
     int64_t GetPastTimeLimit() const
     {
-        return GetMedianTimePast();
+        if (IsProtocolV2(nHeight))
+            return GetBlockTime();
+        else
+            return GetMedianTimePast();
     }
 
     enum { nMedianTimeSpan=11 };
